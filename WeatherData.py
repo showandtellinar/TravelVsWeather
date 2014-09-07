@@ -54,3 +54,9 @@ cleanWeather = dirtyWeather[['EDT',' Events']]
 
 #returns a list of all dates where it rained and assigns it to a new dataframe
 rainyDays = cleanWeather[cleanWeather[' Events'].fillna(" ").str.contains("Rain")]
+
+#CSV of each day's weather
+cleanWeather.to_csv("cleanweather.csv")
+
+#CSV of rainy day's weather
+cleanWeather.to_csv("rainyweather.csv")
