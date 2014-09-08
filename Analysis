@@ -1,0 +1,89 @@
+#Read csv file
+WalkingvsDriving<-read.csv("activities.csv",header=TRUE,na.strings="")
+rainyweather<-read.csv("rainyweather.csv",header=TRUE,skip=6,na.strings="")
+cleanweather<-read.csv("cleanweather.csv",header=TRUE,skip=21,na.strings="")
+#Needs na.strings="" or it will not recognize white spaces as NA values
+#Needs to skip because WalkingvsDriving data begins on 03-22-2014
+
+#Total number of walking and total number of driving
+Walking <- WalkingvsDriving$Activity=="Walking"
+Walkingsum<-sum(Walking)
+
+#333 Walking
+
+Driving <- WalkingvsDriving$Activity=="Driving"
+Drivingsum<-sum(Driving)
+
+#416 Driving
+
+#Graphs
+
+#Average Speed (MPH)
+hist(WalkingvsDriving$AvgSpeedMPH,breaks=100,
+     main=paste("Histogram of", "Walking vs. Driving"),xlab="MPH")
+
+#Both Driving and Walking 
+barplot(table(WalkingvsDriving$Activity))
+
+mean(WalkingvsDriving$AvgSpeedMPH)
+#mean speed is 17.4107 mph
+
+#Merge data after cleaning data
+#Rename date variable
+WalkingvsDriving$newstartdate <- substr(WalkingvsDriving$StartTime,1,10)
+WalkingvsDriving$newenddate <- substr(WalkingvsDriving$EndTime,1,10)
+
+#Drops original date
+WalkingvsDriving$StartTime=NULL
+WalkingvsDriving$EndTime=NULL
+
+#Rename/change format for rainyweather/WalkingvsDriving/cleanweather
+names(rainyweather) <- c("X","newstartdate1","Events")
+names(cleanweather) <- c("X","newstartdate1","Events")
+
+rainyweather$newstartdate<-as.Date(rainyweather$newstartdate1,format="%Y-%m-%d")
+rainyweather$newstartdate1=NULL
+
+cleanweather$newstartdate<-as.Date(cleanweather$newstartdate1,format="%Y-%m-%d")
+cleanweather$newstartdate1=NULL
+
+WalkingvsDriving$newstartdate<-as.Date(WalkingvsDriving$newstartdate,format="%Y-%m-%d")
+
+#Merge 
+library("sqldf")
+join1 <- sqldf("SELECT * FROM rainyweather a
+              LEFT JOIN WalkingvsDriving b ON a.newstartdate=b.newstartdate")
+
+join2 <- sqldf("SELECT * FROM cleanweather c
+               LEFT JOIN WalkingvsDriving d ON c.newstartdate=d.newstartdate")
+
+#Times walked during rainy conditions
+
+join1.1<-join1$Activity=="Walking"
+sum(join1.1,na.rm=TRUE)
+#86 times walked during rainy conditions
+
+#86/242=35.54%
+
+#Times drove during rainy conditions
+join1.2<-join1$Activity=="Driving"
+sum(join1.2,na.rm=TRUE)
+#156 times drove during rainy conditions
+
+#156/242=64.46%
+
+#Times walked during good condition
+x<-join2$Activity[is.na(join2$Events)]
+sum(x=="Walking",na.rm=TRUE)
+
+#231 times walked during good conditions
+#231/467=49.4647%
+
+#Times drove during good condition
+sum(x=="Driving",na.rm=TRUE)
+
+#236 times walked during good conditions
+#236/467 = 50.5453%
+
+
+
