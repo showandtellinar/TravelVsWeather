@@ -99,6 +99,34 @@ def getActivityPeriods(data, minMinutesBetween, minPeriodMinutes, speedRange):
     
     return results
 
+	
+def GetWalkingAndDrivingCSVFromString(string):
+    df = ParseKML.ParseKMLStringToDataFrame(string)
+    df = AddLocationFeatures(df)
+    df = CleanData(df)
+    walking_periods = getActivityPeriods(df, 5, 5, WalkingRange)
+    driving_periods = getActivityPeriods(df, 5, 5, DrivingRange)
+    lines = []
+    for p in walking_periods:        
+        lines.append("WALKING,{},{},{}".format(p.StartTime.strftime("%Y%m%d %H:%M"), p.EndTime.strftime("%Y%m%d %H:%M"), p.AvgSpeed))
+    for p in driving_periods:
+        lines.append("DRIVING,{},{},{}".format(p.StartTime.strftime("%Y%m%d %H:%M"), p.EndTime.strftime("%Y%m%d %H:%M"), p.AvgSpeed))
+    return "\r\n".join(lines)
+	
+	
+def GetWalkingAndDrivingFromString(string):
+    df = ParseKML.ParseKMLStringToDataFrame(string)
+    df = AddLocationFeatures(df)
+    df = CleanData(df)
+    walking_periods = getActivityPeriods(df, 5, 5, WalkingRange)
+    driving_periods = getActivityPeriods(df, 5, 5, DrivingRange)
+    lines = []
+    for p in walking_periods:        
+        lines.append("WALKING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%Y%m%d %H:%M"), p.EndTime.strftime("%Y%m%d %H:%M"), p.AvgSpeed))
+    for p in driving_periods:
+        lines.append("DRIVING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%Y%m%d %H:%M"), p.EndTime.strftime("%Y%m%d %H:%M"), p.AvgSpeed))
+    return "\r\n".join(lines)
+
 
 def GetWalkingAndDriving(path):
     print "Loading file:", path
@@ -109,12 +137,16 @@ def GetWalkingAndDriving(path):
     driving_periods = getActivityPeriods(df, 5, 5, DrivingRange)
     lines = []
     for p in walking_periods:        
-        lines.append("WALKING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%y%m%d %H:%M"), p.EndTime.time().strftime("%y%m%d %H:%M"), p.AvgSpeed))
+        lines.append("WALKING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%Y%m%d %H:%M"), p.EndTime.strftime("%Y%m%d %H:%M"), p.AvgSpeed))
     for p in driving_periods:
-        lines.append("DRIVING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%y%m%d %H:%M"), p.EndTime.time().strftime("%y%m%d %H:%M"), p.AvgSpeed))
+        lines.append("DRIVING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%Y%m%d %H:%M"), p.EndTime.strftime("%Y%m%d %H:%M"), p.AvgSpeed))
     return "\r\n".join(lines)
 
+
 if __name__ == "__main__":
+    print GetWalkingAndDriving("C:\\Users\\Danny\\Google Drive\\MSDS\Data Hacking\\history-08-24-2014.kml")
+    sys.exit()
+    
     path = sys.argv[1]
     out_file = ""
     if len(sys.argv) == 3:

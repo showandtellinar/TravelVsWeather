@@ -4,13 +4,10 @@ import pandas as pd
 import dateutil
 
 
-def ParseKMLtoDataFrame(path):
-    print "Converting file to DataFrame...",
+def ParseKMLStringToDataFrame(kmlString):
     last_time = None
     rows = []
-    with open(path) as f:
-        lines = f.readlines()
-        for line in lines:
+    for line in kmlString.rstrip().split('\n'):
             dt_m = re.match(r"<when>(?P<datetime>.*?)</when>", line)
             if dt_m is not None:
                 last_time = dt_m.group("datetime")
@@ -24,3 +21,14 @@ def ParseKMLtoDataFrame(path):
     df.set_index("datetime", inplace=True)
     print "Done"
     return df
+
+
+def ParseKMLtoDataFrame(path):
+    print "Converting file to DataFrame...",
+    with open(path) as f:
+        lines = f.read()
+        return ParseKMLStringToDataFrame(lines)
+        
+        
+if __name__ == "__main__":
+    print ParseKMLtoDataFrame("C:\\Users\\Danny\\Google Drive\\MSDS\Data Hacking\\history-08-24-2014.kml")
