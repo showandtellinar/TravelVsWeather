@@ -144,9 +144,6 @@ def GetWalkingAndDriving(path):
 
 
 if __name__ == "__main__":
-    print GetWalkingAndDriving("C:\\Users\\Danny\\Google Drive\\MSDS\Data Hacking\\history-08-24-2014.kml")
-    sys.exit()
-    
     path = sys.argv[1]
     out_file = ""
     if len(sys.argv) == 3:
