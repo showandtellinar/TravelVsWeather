@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 __author__ = "Danny Brady"
 
+import sys
 import pandas as pd
 from datetime import timedelta
-import dateutil
 from math import radians, cos, sin, asin, sqrt
 from collections import namedtuple
+from ReverseGeocode import ReverseGeocode
+import ParseKML
 
 
 Range = namedtuple("Range", ['l', 'h'])
@@ -13,16 +15,6 @@ WalkingRange = Range(1.5, 5)
 DrivingRange = Range(8, 80)
 
 Activity = namedtuple("Activity", ['StartTime', 'EndTime', 'AvgSpeed', 'StartCoordinates', 'EndCoordinates'])
-
-
-def LocationCSVtoDF(path):
-    """Read in csv data converted from kml file"""
-    print "Reading in file:", path, "....",
-    df = pd.read_csv(path)
-    df.datetime = df.datetime.apply(lambda dt: dateutil.parser.parse(dt).astimezone(dateutil.tz.tzlocal()))
-    df.set_index("datetime", inplace=True)
-    print "DONE"
-    return df
 
 
 def Haversine(lon1, lat1, lon2, lat2):
@@ -52,6 +44,7 @@ def AddLocationFeatures(df):
     df['prevLong'] = (df['long'].shift())
     df['prevLat'] = (df['lat'].shift())
     df = df.dropna()
+
     df['distance_meters'] = df.apply(lambda r: Haversine(r.long, r.lat, r.prevLong, r.prevLat), 1)
     miles_per_meter = 0.000621371
     seconds_per_hour = 60*60
@@ -107,10 +100,28 @@ def getActivityPeriods(data, minMinutesBetween, minPeriodMinutes, speedRange):
     return results
 
 
-if __name__ == "__main__":
-    df = LocationCSVtoDF("/users/danny/google drive/msds/data hacking/brady_location.csv")
+def GetWalkingAndDriving(path):
+    print "Loading file:", path
+    df = ParseKML.ParseKMLtoDataFrame(path)
     df = AddLocationFeatures(df)
     df = CleanData(df)
-    periods = getActivityPeriods(df, 5, 5, WalkingRange)
-    for p in periods:
-        print "S:", p.StartTime, "F:", p.EndTime, "Avg", p.AvgSpeed
+    walking_periods = getActivityPeriods(df, 5, 5, WalkingRange)
+    driving_periods = getActivityPeriods(df, 5, 5, DrivingRange)
+    lines = []
+    for p in walking_periods:        
+        lines.append("WALKING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%y%m%d %H:%M"), p.EndTime.time().strftime("%y%m%d %H:%M"), p.AvgSpeed))
+    for p in driving_periods:
+        lines.append("DRIVING - S:{} F:{} Avg:{}".format(p.StartTime.strftime("%y%m%d %H:%M"), p.EndTime.time().strftime("%y%m%d %H:%M"), p.AvgSpeed))
+    return "\r\n".join(lines)
+
+if __name__ == "__main__":
+    path = sys.argv[1]
+    out_file = ""
+    if len(sys.argv) == 3:
+        out_file = sys.argv[2]
+    activities = GetWalkingAndDriving(path)
+    if out_file != "":
+        with open(out_file, "w") as f:
+            f.write(activities)
+    else:
+        print activities
